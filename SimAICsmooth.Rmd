@@ -1,0 +1,120 @@
+---
+title: "Simulate automatic model choose with spare data"
+author: "Harald.Weedon-Fekjar@medisin.uio.no"
+date: "26 november 2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r simmodelsel}
+
+# Harald Weedon-Fekjær, OCBE-OuS <harald.weedon-fekjar@medisin.uio.no>
+# Tema:      Simulate automatic model choose with spare data
+# Prosjekt:  General, 2019
+# Språk:	   S (http://www.r-project.org )
+
+
+# *********************************************************************
+# ********** Basic simulation and ploting of exsample data:  **********
+# *********************************************************************
+# -----
+
+set.seed(3)
+a <- 2; b <- 0.1; 
+x <- (-50:250)/10
+y <- 0+a*x+b*x^2
+sim <- data.frame(x=c(-5,0,5,15,20,25))
+  # Alternativly:  sim <- data.frame(x=runif(12,-1,12))
+sim$y <- 0+a*sim$x+b*sim$x^2 + rnorm(length(sim$x),0,20)
+plot(x,y,type="l",ylim=c(min(y,sim$y),max(y,sim$y)))
+points(sim$x,sim$y)
+
+
+# -----
+# ***************************************************
+# ********** Simulation: Table model fit:  **********
+# ***************************************************
+# -----
+
+# Spares data:
+set.seed(3)
+a <- 2; b <- 0.1; 
+x <- (-50:250)/10
+y <- 0+a*x+b*x^2
+#
+res <- rep(NA,1000)
+for (i in 1:1000) {
+  sim <- data.frame(x=c(-5,0,5,15,20,25))
+  sim$x2 <- sim$x^2
+  sim$y <- 0+a*sim$x+b*sim$x^2 + rnorm(length(sim$x),0,20)
+  m1 <- lm(y~1,data=sim)
+  m2 <- lm(y~1+x,data=sim)
+  m3 <- lm(y~1+x2,data=sim)
+  m4 <- lm(y~1+x+x2,data=sim)
+  bestmodel <- which.min(c(AIC(m1),AIC(m2),AIC(m3),AIC(m4)))
+  res[i] <- bestmodel  
+}
+table(res)
+
+# -----
+
+# Lot of data:
+set.seed(3)
+a <- 2; b <- 0.1; 
+x <- (-50:250)/10
+y <- 0+a*x+b*x^2
+#
+res <- rep(NA,1000)
+for (i in 1:1000) {
+  sim <- data.frame(x=-5+0:300/10)
+  sim$x2 <- sim$x^2
+  sim$y <- 0+a*sim$x+b*sim$x^2 + rnorm(length(sim$x),0,20)
+  m1 <- lm(y~1,data=sim)
+  m2 <- lm(y~1+x,data=sim)
+  m3 <- lm(y~1+x2,data=sim)
+  m4 <- lm(y~1+x+x2,data=sim)
+  bestmodel <- which.min(c(AIC(m1),AIC(m2),AIC(m3),AIC(m4)))
+  res[i] <- bestmodel  
+}
+table(res)
+
+
+# -----
+# ***************************************************
+# ********** Simulation: Plot model fit:  **********
+# ***************************************************
+# -----
+
+# Spares data:
+set.seed(3)
+a <- 2; b <- 0.1; 
+x <- (-50:250)/10
+y <- 0+a*x+b*x^2
+plot(x,y,type="l",ylim=c(min(y,sim$y),max(y,sim$y)))
+#
+res <- matrix(NA,nrow=100,ncol=6)
+for (i in 1:100) {
+  sim <- data.frame(x=c(-5,0,5,15,20,25))
+  sim$x2 <- sim$x^2
+  sim$y <- 0+a*sim$x+b*sim$x^2 + rnorm(length(sim$x),0,20)
+  m1 <- lm(y~1,data=sim)
+  m2 <- lm(y~1+x,data=sim)
+  m3 <- lm(y~1+x2,data=sim)
+  m4 <- lm(y~1+x+x2,data=sim)
+  bestmodel <- which.min(c(AIC(m1),AIC(m2),AIC(m3),AIC(m4)))
+  bm <- list(m1,m2,m2,m4)[[bestmodel]]
+  lines(sim$x,predict(bm,newdata=sim),lty=3,col=gray(0.8))
+  res[i,] <- predict(bm,newdata=sim)
+}
+lines(x,y,lwd=3)
+lines(sim$x,apply(res,2,mean),col="red",type="b")
+
+
+```
+
